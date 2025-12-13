@@ -1,13 +1,18 @@
 import paho.mqtt.client as mqtt
 import json
+import os
+from evaluator import EventEvaluator
+
+broker = os.getenv("MQTT_HOST", "localhost")
+port = int(os.getenv("MQTT_PORT", 1883))
 
 class EventSubscriber:
-    def __init__(self, evaluator, broker="localhost", topic="wifi/events"):
+    def __init__(self, evaluator, broker=broker, topic="wifi/events"):
         self.evaluator = evaluator
         self.topic = topic
         self.client = mqtt.Client(client_id="sentinel-core", callback_api_version=2)
         self.client.on_message = self.on_message
-        self.client.connect(broker, 1883)
+        self.client.connect(broker, port)
         self.client.subscribe(topic)
 
 
@@ -21,3 +26,9 @@ class EventSubscriber:
     def start(self):
         print("[SUBSCRIBER] in ascolto...")
         self.client.loop_forever()
+
+
+if __name__ == "__main__":
+    evaluator = EventEvaluator()
+    subscriber = EventSubscriber(evaluator)
+    subscriber.start()
