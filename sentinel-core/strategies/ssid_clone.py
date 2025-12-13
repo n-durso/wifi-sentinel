@@ -1,4 +1,4 @@
-from base_strategy import Strategy
+from strategies.base_strategy import Strategy
 class SSIDCloneStrategy(Strategy):
     def evaluate(self, event, history):
         same_ssid = [h for h in history if h["ssid"] == event["ssid"]
