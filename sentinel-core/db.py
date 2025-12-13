@@ -1,0 +1,33 @@
+import os
+import psycopg2
+
+DB_HOST = os.getenv("DB_HOST")
+DB_PORT = int(os.getenv("DB_PORT"))
+DB_USER = os.getenv("DB_USER")
+DB_PASSWORD = os.getenv("DB_PASSWORD")
+DB_NAME = os.getenv("DB_NAME")
+
+def get_conn():
+    return psycopg2.connect(
+        host=DB_HOST,
+        port=DB_PORT,
+        user=DB_USER,
+        password=DB_PASSWORD,
+        dbname=DB_NAME
+    )
+
+def save_snapshot(timestamp, networks_json):
+    try:
+        conn = get_conn()
+        cur = conn.cursor()
+        cur.execute(
+            "INSERT INTO wifi_snapshots (timestamp, snapshot) VALUES (%s, %s)",
+            (timestamp, networks_json)
+        )
+        conn.commit()
+    except Exception as e:
+        print("[DB] Errore nel salvataggio:", e)
+    finally:
+        cur.close()
+        conn.close()
+
