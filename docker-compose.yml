@@ -2,9 +2,11 @@ services:
   broker:
     image: eclipse-mosquitto
     container_name: broker
-    network_mode: host
+    #network_mode: host
     volumes:
       - ./event-broker/mosquitto.conf:/mosquitto/config/mosquitto.conf
+    networks:
+      - sentinel-net
 
   sentinel-monitor:
     build: ./sentinel-monitor
@@ -12,7 +14,7 @@ services:
     network_mode: host
     privileged: true # Necessario per l'accesso alle interfacce di rete
     environment:
-      - MQTT_HOST=127.0.0.1
+      - MQTT_HOST=172.18.0.3 # indirizzo del broker nella rete docker che potrebbe cambiare sempre
       - MQTT_PORT=1883
     depends_on:
       - broker
@@ -20,9 +22,11 @@ services:
       - /var/run/dbus/system_bus_socket:/var/run/dbus/system_bus_socket # Necessario per l'uso di NetworkManager
 
   sentinel-core:
+    build: ./sentinel-core
     container_name: sentinel-core
+    #network_mode: host
     environment:
-      - MQTT_HOST=127.0.0.1
+      - MQTT_HOST=broker
       - MQTT_PORT=1883
       - DB_HOST=sentinel-db
       - DB_PORT=5432
@@ -47,7 +51,7 @@ services:
     volumes:
       - sentinel-db-data:/var/lib/postgresql/data
     ports:
-      - "5432:5432"
+      - "5433:5432"
     networks:
       - sentinel-net
 
