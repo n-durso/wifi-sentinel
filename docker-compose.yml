@@ -2,6 +2,8 @@ services:
   broker:
     image: eclipse-mosquitto
     container_name: broker
+    ports:
+      - "1883:1883"
     #network_mode: host
     volumes:
       - ./event-broker/mosquitto.conf:/mosquitto/config/mosquitto.conf
@@ -14,7 +16,7 @@ services:
     network_mode: host
     privileged: true # Necessario per l'accesso alle interfacce di rete
     environment:
-      - MQTT_HOST=172.18.0.3 # indirizzo del broker nella rete docker che potrebbe cambiare sempre
+      - MQTT_HOST=127.0.0.1 
       - MQTT_PORT=1883
     depends_on:
       - broker
