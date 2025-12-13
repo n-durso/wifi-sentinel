@@ -6,6 +6,9 @@ RUN apt-get update && \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
+RUN pip install psycopg2-binary
+
+
 # Workdir
 WORKDIR /app
 
