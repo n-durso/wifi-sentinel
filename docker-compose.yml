@@ -10,11 +10,14 @@ services:
     build: ./sentinel-monitor
     container_name: sentinel-monitor
     network_mode: host
+    privileged: true # Necessario per l'accesso alle interfacce di rete
     environment:
       - MQTT_HOST=127.0.0.1
       - MQTT_PORT=1883
     depends_on:
       - broker
+    volumes:
+      - /var/run/dbus/system_bus_socket:/var/run/dbus/system_bus_socket # Necessario per l'uso di NetworkManager
 
   sentinel-core:
     build: ./sentinel-core
