@@ -2,34 +2,26 @@ services:
   broker:
     image: eclipse-mosquitto
     container_name: broker
-    ports:
-      - "1883:1883"
+    network_mode: host
     volumes:
       - ./event-broker/mosquitto.conf:/mosquitto/config/mosquitto.conf
-    networks:
-      - sentinel-net
 
   sentinel-monitor:
     build: ./sentinel-monitor
     container_name: sentinel-monitor
+    network_mode: host
+    environment:
+      - MQTT_HOST=127.0.0.1
+      - MQTT_PORT=1883
     depends_on:
       - broker
-    environment:
-      - MQTT_HOST=host.docker.internal        # Nome del servizio nel compose, ma punto alla macchina host perché questo servizio usa network_mode: "host"
-      - MQTT_PORT=1883
-    network_mode: "host"        # Serve per accedere alle interfacce di rete locali
 
   sentinel-core:
     build: ./sentinel-core
     container_name: sentinel-core
+    network_mode: host
+    environment:
+      - MQTT_HOST=127.0.0.1
+      - MQTT_PORT=1883
     depends_on:
       - broker
-    environment:
-      - MQTT_HOST=broker
-      - MQTT_PORT=1883
-    networks:
-      - sentinel-net
-
-networks:
-  sentinel-net:
-    driver: bridge
