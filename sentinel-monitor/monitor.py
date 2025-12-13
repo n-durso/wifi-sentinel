@@ -17,15 +17,29 @@ class WifiMonitor:
             networks = []
             for line in result.stdout.splitlines():
                 try:
-                    ssid, bssid, chan, signal = line.split(":")
+                    parts = line.split(":")
+
+                    if len(parts) < 4:
+                        print("[MONITOR] Riga ignorata (troppo corta):", line)
+                        continue
+
+                    ssid = parts[0]
+                    signal = parts[-1]
+                    chan = parts[-2]
+
+                    # ricostruzione robusta del BSSID
+                    bssid = ":".join(parts[1:-2])
+
                     networks.append({
                         "ssid": ssid,
                         "bssid": bssid,
                         "channel": int(chan),
                         "rssi": int(signal)
                     })
-                except:
-                    pass
+
+                except Exception as e:
+                    print("[MONITOR] Errore parsing:", line, e)
+
 
             return networks
 
@@ -44,6 +58,9 @@ if __name__ == "__main__":
             "timestamp": time.time(),
             "networks": nets
         }
+
+        print("[MONITOR] Payload inviato:", json.dumps(snapshot, indent=2))
+
 
         publisher.publish_event(snapshot)
         print("[MONITOR] Inviato snapshot con", len(nets), "reti")
