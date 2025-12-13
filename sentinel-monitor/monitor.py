@@ -48,4 +48,4 @@ if __name__ == "__main__":
         publisher.publish_event(snapshot)
         print("[MONITOR] Inviato snapshot con", len(nets), "reti")
 
-        time.sleep(5)
+        time.sleep(10) # Attendi 10 secondi prima della prossima scansione
