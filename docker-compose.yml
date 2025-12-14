@@ -37,6 +37,8 @@ services:
       - DB_PASSWORD=sentinelpassword
       - DB_NAME=sentinel_db
       - PYTHONUNBUFFERED=1
+      - TELEGRAM_TOKEN=8455359017:AAGB3V0mePlQ-jU7GcMZ0aBd4e8RyTFtu5g
+      - TELEGRAM_CHAT_ID=218463477
     depends_on:
       - broker
       - db
