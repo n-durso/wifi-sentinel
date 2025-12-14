@@ -32,15 +32,41 @@ class EventSubscriber:
             print("[CORE] Errore parsing JSON:", e)
             return
 
-        print("Evento ricevuto:", event)
-
+        # Salvataggio DB
         try:
             save_snapshot(event["timestamp"], json.dumps(event["networks"]))
         except Exception as e:
             print("[DB] Errore salvataggio:", e)
 
+        # Analisi
         decision = self.evaluator.evaluate_event(event)
-        print("[CORE] Decision:", decision)
+        
+        status = decision["status"]
+        score = decision["score"]
+        reasons = decision["reasons"]
+
+        # --- OUTPUT ---
+        if status == "SAFE":
+            # Output minimale se SAFE
+            count = len(event.get("networks", []))
+            print(f"[CORE] ✅ SAFE - Analizzate {count} reti (Score: {score:.1f})")
+        
+        else:
+            # Output più corposo se SUSPICIOUS o EVIL_TWIN
+            color = "⚠️" if status == "SUSPICIOUS" else "🚨"
+            border = "!" * 60
+            
+            print("\n" + border)
+            print(f"{color}  {status} DETECTED (Score: {score:.2f})  {color}")
+            print("-" * 60)
+            
+            if not reasons:
+                print("Nessun motivo specifico fornito (controllare logica strategie).")
+            else:
+                for reason in reasons:
+                    print(f" -> {reason}")
+            
+            print(border + "\n")
 
     def start(self):
         print("[SUBSCRIBER] in ascolto...")

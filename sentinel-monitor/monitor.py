@@ -1,34 +1,40 @@
 import subprocess
 import time
 import json
+import csv
+import sys
 from mqtt_publisher import MqttPublisher
 
 class WifiMonitor:
     def scan(self):
-        cmd = ['nmcli', '-t', '-f', 'SSID,BSSID,CHAN,SIGNAL', 'dev', 'wifi']
-
+        # --rescan yes serve per forzare una nuova scansione e non usare cache
+        cmd = ['nmcli', '-t', '-f', 'SSID,BSSID,CHAN,SIGNAL', 'dev', 'wifi', 'list', '--rescan', 'yes']
+        
         try:
             result = subprocess.run(cmd, capture_output=True, text=True)
 
             if result.returncode != 0:
-                print("[MONITOR] ERRORE nmcli:", result.stderr)
+                print(f"[MONITOR] ERRORE nmcli: {result.stderr}", file=sys.stderr)
                 return []
 
             networks = []
-            for line in result.stdout.splitlines():
-                try:
-                    parts = line.split(":")
+            
+            reader = csv.reader(result.stdout.splitlines(), delimiter=':', escapechar='\\')
 
-                    if len(parts) < 4:
-                        print("[MONITOR] Riga ignorata (troppo corta):", line)
+            for row in reader:
+                # row sarà una lista tipo: ['SKYWIFI', 'D4:F0:4A:1C:57:CD', '6', '100']
+                try:
+                    if len(row) < 4:
                         continue
 
-                    ssid = parts[0]
-                    signal = parts[-1]
-                    chan = parts[-2]
+                    ssid = row[0]
+                    bssid = row[1]
+                    chan = row[2]
+                    signal = row[3]
 
-                    # ricostruzione robusta del BSSID
-                    bssid = ":".join(parts[1:-2])
+                    # Ignora reti senza SSID (spesso reti nascoste)
+                    if not ssid:
+                        continue
 
                     networks.append({
                         "ssid": ssid,
@@ -37,32 +43,39 @@ class WifiMonitor:
                         "rssi": int(signal)
                     })
 
+                except ValueError:
+                    print(f"[MONITOR] Errore conversione dati riga: {row}")
                 except Exception as e:
-                    print("[MONITOR] Errore parsing:", line, e)
-
+                    print(f"[MONITOR] Errore generico riga: {row} -> {e}")
 
             return networks
 
         except Exception as e:
-            print("[MONITOR] Eccezione:", e)
+            print(f"[MONITOR] Eccezione critica durante la scansione: {e}")
             return []
 
 if __name__ == "__main__":
     monitor = WifiMonitor()
     publisher = MqttPublisher()
 
+    print("[MONITOR] Avvio scansione ciclica...")
+
     while True:
+        start_time = time.time()
         nets = monitor.scan()
 
-        snapshot = {
-            "timestamp": time.time(),
-            "networks": nets
-        }
+        if nets:
+            snapshot = {
+                "timestamp": start_time,
+                "networks": nets
+            }
+            
+            # Pubblica
+            publisher.publish_event(snapshot)
+            
+            # Log con solo il numero di reti per non avere troppo output
+            print(f"[MONITOR] Inviato snapshot: {len(nets)} reti rilevate.")
+        else:
+            print("[MONITOR] Nessuna rete rilevata o errore scansione.")
 
-        print("[MONITOR] Payload inviato:", json.dumps(snapshot, indent=2))
-
-
-        publisher.publish_event(snapshot)
-        print("[MONITOR] Inviato snapshot con", len(nets), "reti")
-
-        time.sleep(10) # Attendi 10 secondi prima della prossima scansione
+        time.sleep(10)
