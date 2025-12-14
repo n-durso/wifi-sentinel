@@ -3,6 +3,7 @@ import json
 import os
 from evaluator import Evaluator
 from db import save_snapshot
+from notifier import TelegramNotifier
 
 broker_host = os.getenv("MQTT_HOST", "127.0.0.1")
 broker_port = int(os.getenv("MQTT_PORT", 1883))
@@ -10,6 +11,7 @@ broker_port = int(os.getenv("MQTT_PORT", 1883))
 class EventSubscriber:
     def __init__(self, evaluator, broker=broker_host, port=broker_port, topic="wifi/events"):
         self.evaluator = evaluator
+        self.notifier = TelegramNotifier()
         self.topic = topic
         self.client = mqtt.Client(client_id="sentinel-core")
         self.client.on_connect = self.on_connect
@@ -45,7 +47,7 @@ class EventSubscriber:
         score = decision["score"]
         reasons = decision["reasons"]
 
-        # --- OUTPUT ---
+        # --- OUTPUT e TELEGRAM---
         if status == "SAFE":
             # Output minimale se SAFE
             count = len(event.get("networks", []))
@@ -67,6 +69,16 @@ class EventSubscriber:
                     print(f" -> {reason}")
             
             print(border + "\n")
+
+            # Notifica Telegram solo per EVIL_TWIN
+            if status == "EVIL_TWIN":
+                msg_text = (
+                    f"🚨 *ALLARME WIFI SENTINEL* 🚨\n\n"
+                    f"⚠️ *Rilevato Attacco EVIL TWIN*\n"
+                    f"📉 *Score:* {score:.2f}\n\n"
+                    f"🔍 *Dettagli:*\n{reason}"
+                )
+                self.notifier.send_alert(msg_text)
 
     def start(self):
         print("[SUBSCRIBER] in ascolto...")
