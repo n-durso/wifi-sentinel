@@ -2,6 +2,7 @@ import paho.mqtt.client as mqtt
 import json
 import os
 from evaluator import Evaluator
+from db import save_snapshot
 
 broker_host = os.getenv("MQTT_HOST", "127.0.0.1")
 broker_port = int(os.getenv("MQTT_PORT", 1883))
@@ -11,17 +12,35 @@ class EventSubscriber:
         self.evaluator = evaluator
         self.topic = topic
         self.client = mqtt.Client(client_id="sentinel-core")
+        self.client.on_connect = self.on_connect
         self.client.on_message = self.on_message
         self.client.connect(broker, port)
         self.client.subscribe(topic)
 
+    def on_connect(self, client, userdata, flags, rc):
+        if rc == 0:
+            print("[MQTT] Connesso. Iscrizione al topic...")
+            client.subscribe(self.topic)
+        else:
+            print("[MQTT] ERRORE:", rc)
+
 
     def on_message(self, client, userdata, msg):
-        event = json.loads(msg.payload.decode())
+        try:
+            event = json.loads(msg.payload.decode())
+        except Exception as e:
+            print("[CORE] Errore parsing JSON:", e)
+            return
+
         print("Evento ricevuto:", event)
 
+        try:
+            save_snapshot(event["timestamp"], json.dumps(event["networks"]))
+        except Exception as e:
+            print("[DB] Errore salvataggio:", e)
+
         decision = self.evaluator.evaluate_event(event)
-        print("[CORE] Decision: ", decision)
+        print("[CORE] Decision:", decision)
 
     def start(self):
         print("[SUBSCRIBER] in ascolto...")

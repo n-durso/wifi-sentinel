@@ -2,9 +2,13 @@ services:
   broker:
     image: eclipse-mosquitto
     container_name: broker
-    network_mode: host
+    ports:
+      - "1883:1883"
+    #network_mode: host
     volumes:
       - ./event-broker/mosquitto.conf:/mosquitto/config/mosquitto.conf
+    networks:
+      - sentinel-net
 
   sentinel-monitor:
     build: ./sentinel-monitor
@@ -12,7 +16,7 @@ services:
     network_mode: host
     privileged: true # Necessario per l'accesso alle interfacce di rete
     environment:
-      - MQTT_HOST=127.0.0.1
+      - MQTT_HOST=127.0.0.1 
       - MQTT_PORT=1883
     depends_on:
       - broker
@@ -22,9 +26,40 @@ services:
   sentinel-core:
     build: ./sentinel-core
     container_name: sentinel-core
-    network_mode: host
+    #network_mode: host
     environment:
-      - MQTT_HOST=127.0.0.1
+      - MQTT_HOST=broker
       - MQTT_PORT=1883
+      - DB_HOST=sentinel-db
+      - DB_PORT=5432
+      - DB_USER=sentinel
+      - DB_PASSWORD=sentinelpassword
+      - DB_NAME=sentinel_db
     depends_on:
       - broker
+      - db
+    networks:
+      - sentinel-net
+
+
+  db:
+    image: postgres:16
+    container_name: sentinel-db
+    restart: always
+    environment:
+      - POSTGRES_USER=sentinel
+      - POSTGRES_PASSWORD=sentinelpassword
+      - POSTGRES_DB=sentinel_db
+    volumes:
+      - sentinel-db-data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    networks:
+      - sentinel-net
+
+volumes:
+  sentinel-db-data:
+
+networks:
+  sentinel-net:
+    driver: bridge
