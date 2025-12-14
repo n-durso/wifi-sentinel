@@ -18,6 +18,7 @@ services:
     environment:
       - MQTT_HOST=127.0.0.1 
       - MQTT_PORT=1883
+      - PYTHONUNBUFFERED=1
     depends_on:
       - broker
     volumes:
@@ -35,6 +36,7 @@ services:
       - DB_USER=sentinel
       - DB_PASSWORD=sentinelpassword
       - DB_NAME=sentinel_db
+      - PYTHONUNBUFFERED=1
     depends_on:
       - broker
       - db
