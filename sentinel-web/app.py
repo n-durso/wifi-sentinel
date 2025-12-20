@@ -1,7 +1,7 @@
 import os
 import psycopg2
 import json
-from flask import Flask, render_template
+from flask import Flask, render_template, request, redirect, url_for
 
 app = Flask(__name__)
 
@@ -83,6 +83,24 @@ def index():
             print(f"[WEB] Errore query: {e}")
     
     return render_template('index.html', snapshots=snapshots_list, stats=stats)
+
+@app.route('/reset', methods=['POST'])
+def reset_db():
+    conn = get_db_connection()
+    if conn:
+        try:
+            cur = conn.cursor()
+            # Cancella tutto e riavvia i contatori ID da 1
+            cur.execute("TRUNCATE TABLE wifi_snapshots RESTART IDENTITY;")
+            conn.commit()
+            cur.close()
+            conn.close()
+            print("[WEB] Database resettato con successo.")
+        except Exception as e:
+            print(f"[WEB] Errore reset DB: {e}")
+
+    # Ricarica la pagina principale pulita
+    return redirect(url_for('index'))
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
