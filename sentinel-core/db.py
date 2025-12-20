@@ -16,18 +16,24 @@ def get_conn():
         dbname=DB_NAME
     )
 
-def save_snapshot(timestamp, networks_json):
+def save_snapshot(timestamp, networks_json, status, score, details):
+    conn = None
+    cur = None
     try:
         conn = get_conn()
         cur = conn.cursor()
-        cur.execute(
-            "INSERT INTO wifi_snapshots (timestamp, snapshot) VALUES (%s, %s)",
-            (timestamp, networks_json)
-        )
+
+        query = """
+        INSERT INTO wifi_snapshots (timestamp, snapshot, status, score, details)
+        VALUES (%s, %s, %s, %s, %s)
+        """
+
+        cur.execute(query, (timestamp, networks_json, status, score, details))
+
         conn.commit()
     except Exception as e:
         print("[DB] Errore nel salvataggio:", e)
     finally:
-        cur.close()
-        conn.close()
+        if cur: cur.close()
+        if conn: conn.close()
 
