@@ -2,44 +2,9 @@
 <html lang="it">
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="refresh" content="20">
+    <meta http-equiv="refresh" content="5">
     <title>WiFi Sentinel Dashboard</title>
-    <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f0f2f5; margin: 0; padding: 20px; }
-        .container { max_width: 1200px; margin: 0 auto; }
-        
-        /* Intestazione */
-        header { text-align: center; margin-bottom: 30px; }
-        h1 { color: #2c3e50; margin-bottom: 5px; }
-        .badge { background: #007bff; color: white; padding: 5px 10px; border-radius: 15px; font-size: 0.9em; }
-
-        /* Card Statistiche */
-        .stats-row { display: flex; justify-content: space-between; gap: 20px; margin-bottom: 20px; }
-        .card { background: white; flex: 1; padding: 20px; border-radius: 10px; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        .big-number { font-size: 2em; font-weight: bold; color: #333; }
-        
-        /* Tabella */
-        table { width: 100%; border-collapse: collapse; background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
-        th, td { padding: 15px; text-align: left; border-bottom: 1px solid #eee; }
-        th { background-color: #f8f9fa; color: #666; font-weight: 600; text-transform: uppercase; font-size: 0.85em; }
-        
-        /* Colori per lo stato */
-        .status-badge { padding: 5px 10px; border-radius: 5px; font-weight: bold; font-size: 0.9em; display: inline-block; }
-        .status-SAFE { color: #155724; background-color: #d4edda; }
-        .status-SUSPICIOUS { color: #856404; background-color: #fff3cd; }
-        .status-EVIL_TWIN, .status-ALERT { color: #721c24; background-color: #f8d7da; }
-        
-        /* Evidenzia riga allarme */
-        .row-alert { background-color: #fff5f5; border-left: 4px solid #dc3545; }
-        
-        /* Stile per i dettagli */
-        .details-text { color: #555; font-size: 0.95em; }
-        .alert-text { color: #d63384; font-weight: bold; } /* Colore per evidenziare il testo dell'errore */
-
-        /* Barra Rischio */
-        .risk-bar-bg { background:#eee; width:100px; height:6px; border-radius:3px; margin-top: 5px; }
-        .risk-bar-fill { height:100%; border-radius:3px; transition: width 0.3s; }
-    </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
     <div class="container">
@@ -69,22 +34,20 @@
                     <th style="width: 100px;">Ora</th>
                     <th style="width: 120px;">Reti Rilevate</th>
                     <th style="width: 150px;">Stato Sicurezza</th>
-                    <th>Dettagli Analisi</th> <th style="width: 150px;">Rischio</th>
+                    <th>Dettagli Analisi</th>
+                    <th style="width: 150px;">Rischio</th>
                 </tr>
             </thead>
             <tbody>
                 {% for snap in snapshots %}
                 <tr class="{% if snap.status != 'SAFE' %}row-alert{% endif %}">
                     <td>{{ snap.time }}</td>
-                    
                     <td>{{ snap.net_count }} reti</td>
-                    
                     <td>
                         <span class="status-badge status-{{ snap.status }}">
                             {{ snap.status }}
                         </span>
                     </td>
-
                     <td class="details-text">
                         {% if snap.details %}
                             <span class="alert-text">⚠️ {{ snap.details }}</span>
@@ -92,7 +55,6 @@
                             <span style="color: #aaa;">- Nessuna anomalia -</span>
                         {% endif %}
                     </td>
-
                     <td>
                         <div class="risk-bar-bg">
                             <div class="risk-bar-fill" 
