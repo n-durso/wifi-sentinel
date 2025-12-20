@@ -2,71 +2,130 @@
 <html lang="it">
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="refresh" content="5">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta http-equiv="refresh" content="20">
     <title>WiFi Sentinel Dashboard</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
-<body>
-    <div class="container">
-        <header>
-            <h1>📡 WiFi Sentinel</h1>
-            <span class="badge">Live Monitor</span>
-        </header>
+<body class="bg-light">
 
-        <div class="stats-row">
-            <div class="card">
-                <div>Scan Totali</div>
-                <div class="big-number">{{ stats.total }}</div>
+    <nav class="navbar navbar-dark bg-dark mb-4 shadow-sm">
+        <div class="container">
+            <a class="navbar-brand d-flex align-items-center gap-2" href="#">
+                📡 <strong>WiFi Sentinel</strong>
+                <span class="badge bg-primary rounded-pill" style="font-size: 0.7em;">Live Monitor</span>
+            </a>
+            
+            <form action="{{ url_for('reset_db') }}" method="post" class="d-flex"
+                  onsubmit="return confirm('Sei sicuro? Questo cancellerà tutto lo storico.');">
+                <button type="submit" class="btn btn-outline-danger btn-sm">
+                    🗑️ Reset Demo
+                </button>
+            </form>
+        </div>
+    </nav>
+
+    <div class="container">
+        
+        <div class="row text-center mb-4">
+            <div class="col-md-4">
+                <div class="card shadow-sm border-0 mb-2">
+                    <div class="card-body">
+                        <h6 class="text-muted text-uppercase">Scan Totali</h6>
+                        <h2 class="display-6 fw-bold text-dark">{{ stats.total }}</h2>
+                    </div>
+                </div>
             </div>
-            <div class="card">
-                <div>Sicuri</div>
-                <div class="big-number" style="color: green;">{{ stats.safe }}</div>
+            <div class="col-md-4">
+                <div class="card shadow-sm border-0 mb-2">
+                    <div class="card-body">
+                        <h6 class="text-muted text-uppercase">Sicuri</h6>
+                        <h2 class="display-6 fw-bold text-success">{{ stats.safe }}</h2>
+                    </div>
+                </div>
             </div>
-            <div class="card">
-                <div>Allarmi</div>
-                <div class="big-number" style="color: red;">{{ stats.alert }}</div>
+            <div class="col-md-4">
+                <div class="card shadow-sm border-0 mb-2">
+                    <div class="card-body">
+                        <h6 class="text-muted text-uppercase">Allarmi</h6>
+                        <h2 class="display-6 fw-bold text-danger">{{ stats.alert }}</h2>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <table>
-            <thead>
-                <tr>
-                    <th style="width: 100px;">Ora</th>
-                    <th style="width: 120px;">Reti Rilevate</th>
-                    <th style="width: 150px;">Stato Sicurezza</th>
-                    <th>Dettagli Analisi</th>
-                    <th style="width: 150px;">Rischio</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for snap in snapshots %}
-                <tr class="{% if snap.status != 'SAFE' %}row-alert{% endif %}">
-                    <td>{{ snap.time }}</td>
-                    <td>{{ snap.net_count }} reti</td>
-                    <td>
-                        <span class="status-badge status-{{ snap.status }}">
-                            {{ snap.status }}
-                        </span>
-                    </td>
-                    <td class="details-text">
-                        {% if snap.details %}
-                            <span class="alert-text">⚠️ {{ snap.details }}</span>
-                        {% else %}
-                            <span style="color: #aaa;">- Nessuna anomalia -</span>
-                        {% endif %}
-                    </td>
-                    <td>
-                        <div class="risk-bar-bg">
-                            <div class="risk-bar-fill" 
-                                 style="width: {{ snap.score * 50 }}px; background: {% if snap.score > 0.5 %}#dc3545{% else %}#28a745{% endif %}; max-width: 100%;">
-                            </div>
-                        </div>
-                        <small style="color: #666;">{{ snap.score }}</small>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white py-3">
+                <h5 class="mb-0 text-secondary">📋 Registro Eventi</h5>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Ora</th>
+                            <th>Reti</th>
+                            <th>Stato</th>
+                            <th>Dettagli Analisi</th>
+                            <th>Rischio</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for snap in snapshots %}
+                        <tr class="{% if snap.status != 'SAFE' %}table-danger{% endif %}">
+                            
+                            <td class="fw-bold text-secondary">{{ snap.time }}</td>
+                            
+                            <td>
+                                <span class="badge bg-secondary text-light rounded-pill">
+                                    {{ snap.net_count }}
+                                </span>
+                            </td>
+
+                            <td>
+                                {% if snap.status == 'SAFE' %}
+                                    <span class="badge bg-success">SAFE</span>
+                                {% elif snap.status == 'SUSPICIOUS' %}
+                                    <span class="badge bg-warning text-dark">SUSPICIOUS</span>
+                                {% else %}
+                                    <span class="badge bg-danger">EVIL TWIN</span>
+                                {% endif %}
+                            </td>
+
+                            <td>
+                                {% if snap.details %}
+                                    <div class="d-flex align-items-center text-danger fw-bold">
+                                        <span class="me-2">⚠️</span>
+                                        {{ snap.details }}
+                                    </div>
+                                {% else %}
+                                    <span class="text-muted small">- Nessuna anomalia -</span>
+                                {% endif %}
+                            </td>
+
+                            <td style="width: 150px;">
+                                <div class="progress" style="height: 6px;">
+                                    <div class="progress-bar {% if snap.score > 0.5 %}bg-danger{% else %}bg-success{% endif %}" 
+                                         role="progressbar" 
+                                         style="width: {{ snap.score * 100 }}%">
+                                    </div>
+                                </div>
+                                <small class="text-muted" style="font-size: 0.75rem;">Score: {{ snap.score }}</small>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <p class="text-center text-muted mt-4 small">
+            Monitoraggio attivo • Refresh automatico (5s)
+        </p>
+
     </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
