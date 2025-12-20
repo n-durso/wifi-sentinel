@@ -34,18 +34,23 @@ class EventSubscriber:
             print("[CORE] Errore parsing JSON:", e)
             return
 
-        # Salvataggio DB
-        try:
-            save_snapshot(event["timestamp"], json.dumps(event["networks"]))
-        except Exception as e:
-            print("[DB] Errore salvataggio:", e)
-
         # Analisi
         decision = self.evaluator.evaluate_event(event)
         
         status = decision["status"]
         score = decision["score"]
         reasons = decision["reasons"]
+
+        # Preparo la lista dettagli per il DB
+        details = ", ".join(reasons) if reasons else ""
+
+        # Salvataggio DB
+        try:
+            save_snapshot(event["timestamp"], json.dumps(event["networks"]), status, score, details)
+        except Exception as e:
+            print("[DB] Errore salvataggio:", e)
+
+        
 
         # --- OUTPUT e TELEGRAM---
         if status == "SAFE":
@@ -62,21 +67,21 @@ class EventSubscriber:
             print(f"{color}  {status} DETECTED (Score: {score:.2f})  {color}")
             print("-" * 60)
             
-            if not reasons:
-                print("Nessun motivo specifico fornito (controllare logica strategie).")
+            if details:
+                print(f" -> {details}")
             else:
-                for reason in reasons:
-                    print(f" -> {reason}")
+                print(" -> Nessun dettaglio specifico.")
             
             print(border + "\n")
 
             # Notifica Telegram solo per EVIL_TWIN
             if status == "EVIL_TWIN":
+                # Usiamo 'details' anche nel messaggio Telegram per coerenza
                 msg_text = (
                     f"🚨 *ALLARME WIFI SENTINEL* 🚨\n\n"
                     f"⚠️ *Rilevato Attacco EVIL TWIN*\n"
                     f"📉 *Score:* {score:.2f}\n\n"
-                    f"🔍 *Dettagli:*\n{reason}"
+                    f"🔍 *Dettagli:*\n{details}"
                 )
                 self.notifier.send_alert(msg_text)
 
