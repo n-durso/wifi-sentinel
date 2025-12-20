@@ -78,4 +78,4 @@ if __name__ == "__main__":
         else:
             print("[MONITOR] Nessuna rete rilevata o errore scansione.")
 
-        time.sleep(10)
+        time.sleep(20)
