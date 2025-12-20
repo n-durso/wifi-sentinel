@@ -61,6 +61,22 @@ services:
     networks:
       - sentinel-net
 
+  sentinel-web:
+    build: ./sentinel-web
+    container_name: sentinel-web
+    ports:
+      - "5000:5000"  
+    environment:
+      - DB_HOST=sentinel-db
+      - DB_PORT=5432
+      - DB_USER=sentinel
+      - DB_PASSWORD=${DB_PASSWORD} 
+      - DB_NAME=sentinel_db
+    depends_on:
+      - db
+    networks:
+      - sentinel-net
+
 volumes:
   sentinel-db-data:
 

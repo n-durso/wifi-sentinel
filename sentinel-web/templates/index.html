@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <title>WiFi Sentinel Dashboard</title>
+    <style>
+        body { font-family: sans-serif; background-color: #f4f4f9; padding: 50px; text-align: center; }
+        .card { background: white; padding: 40px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); display: inline-block; }
+        h1 { color: #333; }
+        .number { font-size: 80px; font-weight: bold; color: #007bff; margin: 20px 0; }
+        .status { font-weight: bold; color: #555; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>📡 WiFi Sentinel</h1>
+        <p>Stato Database: <span class="status">{{ status }}</span></p>
+        
+        <div class="number">{{ count }}</div>
+        
+        <p>Snapshot analizzati</p>
+        <p><i>(Ricarica la pagina per aggiornare)</i></p>
+    </div>
+</body>
+</html>
