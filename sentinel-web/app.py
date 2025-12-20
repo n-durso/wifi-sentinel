@@ -2,7 +2,6 @@ import os
 import psycopg2
 import json
 from flask import Flask, render_template
-from datetime import datetime
 
 app = Flask(__name__)
 
@@ -23,25 +22,30 @@ def get_db_connection():
 @app.route('/')
 def index():
     conn = get_db_connection()
-    snapshots = []
+    snapshots_list = []
     stats = {"safe": 0, "alert": 0, "total": 0}
     
     if conn:
         try:
             cur = conn.cursor()
             
-            # 1. Statistiche veloci
+            # 1. Statistiche totali
             cur.execute("SELECT COUNT(*) FROM wifi_snapshots")
             stats["total"] = cur.fetchone()[0]
             
-            # 2. Preleviamo gli ultimi 20 scan ordinati per tempo (dal più recente)
-            # Usiamo to_timestamp per convertire quel "numeraccio" in una data leggibile direttamente da SQL
+            # Statistiche allarmi escludendo quelli SAFE
+            cur.execute("SELECT COUNT(*) FROM wifi_snapshots WHERE status != 'SAFE'")
+            stats["alert"] = cur.fetchone()[0]
+            stats["safe"] = stats["total"] - stats["alert"]
+            
+            # 2. Preleva i dati degli ultimi 20 snapshot
             query = """
                 SELECT 
                     to_timestamp(timestamp) as data_ora,
-                    networks,
-                    status,
-                    score
+                    snapshot,
+                    status, 
+                    score,
+                    details
                 FROM wifi_snapshots 
                 ORDER BY timestamp DESC 
                 LIMIT 20;
@@ -49,32 +53,36 @@ def index():
             cur.execute(query)
             rows = cur.fetchall()
             
-            # Formattiamo i dati per l'HTML
             for row in rows:
-                dt, net_json, status, score = row
                 
-                # Parsing del JSON delle reti se è una stringa, altrimenti lo usiamo così
-                if isinstance(net_json, str):
-                    networks = json.loads(net_json)
+                dt, snapshot_blob, status, score, details = row
+                
+                # Gestione JSON per contare le reti
+                if isinstance(snapshot_blob, str):
+                    networks = json.loads(snapshot_blob)
                 else:
-                    networks = net_json # Psycopg2 converte JSONB automaticamente in dict/list
+                    networks = snapshot_blob # Psycopg2 converte JSON automaticamente
                 
-                # Contiamo quante reti c'erano in quello scan
                 net_count = len(networks) if isinstance(networks, list) else 0
+                
+                # Se details è None mettiamo stringa vuota
+                if details is None:
+                    details = ""
 
-                snapshots.append({
-                    "time": dt.strftime("%H:%M:%S - %d/%m"), # Formattiamo l'ora
+                snapshots_list.append({
+                    "time": dt.strftime("%H:%M:%S"),
                     "net_count": net_count,
                     "status": status,
-                    "score": score
+                    "score": score,
+                    "details": details 
                 })
                 
             cur.close()
             conn.close()
         except Exception as e:
-            print(f"Errore query: {e}")
+            print(f"[WEB] Errore query: {e}")
     
-    return render_template('index.html', snapshots=snapshots, stats=stats)
+    return render_template('index.html', snapshots=snapshots_list, stats=stats)
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
