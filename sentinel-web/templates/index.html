@@ -16,10 +16,19 @@
                 📡 <strong>WiFi Sentinel</strong>
                 <span class="badge bg-primary rounded-pill" style="font-size: 0.7em;">Live Monitor</span>
             </a>
-            <form action="{{ url_for('reset_db') }}" method="post" class="d-flex"
-                  onsubmit="return confirm('Sei sicuro? Questo cancellerà tutto lo storico.');">
-                <button type="submit" class="btn btn-outline-danger btn-sm">🗑️ Reset Demo</button>
-            </form>
+
+            <div class="d-flex gap-2">
+                
+                <a href="{{ url_for('download_report') }}" class="btn btn-outline-success btn-sm d-flex align-items-center">
+                    📄 Export CSV
+                </a>
+
+                <form action="{{ url_for('reset_db') }}" method="post" class="d-flex"
+                    onsubmit="return confirm('Sei sicuro? Questo cancellerà tutto lo storico.');">
+                    <button type="submit" class="btn btn-outline-danger btn-sm">🗑️ Reset Demo</button>
+                </form>
+                
+            </div>
         </div>
     </nav>
 

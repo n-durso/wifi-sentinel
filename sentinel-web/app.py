@@ -1,7 +1,9 @@
 import os
 import psycopg2
 import json
-from flask import Flask, render_template, request, redirect, url_for
+import csv
+import io
+from flask import Flask, render_template, request, redirect, url_for, Response
 
 app = Flask(__name__)
 
@@ -142,6 +144,65 @@ def reset_db():
         except Exception as e:
             print(f"[WEB] Errore reset: {e}")
     return redirect(url_for('index'))
+
+# -- ESPORTA CSV ---
+@app.route('/download_report')
+def download_report():
+    conn = get_db_connection()
+    if not conn:
+        return redirect(url_for('index'))
+    
+    # Creazione CSV in memoria
+    output = io.StringIO()
+    writer = csv.writer(output)
+    
+    # Intestazione del CSV
+    writer.writerow(['ID', 'Data e Ora', 'Stato', 'Score', 'Dettagli', 'Numero Reti'])
+    
+    try:
+        cur = conn.cursor()
+        query = """
+            SELECT id, to_timestamp(timestamp), status, score, details, snapshot
+            FROM wifi_snapshots 
+            ORDER BY timestamp DESC
+        """
+        cur.execute(query)
+        rows = cur.fetchall()
+        
+        for row in rows:
+            snap_id, dt, status, score, details, snapshot_blob = row
+            
+            # Calcolo numero reti
+            if isinstance(snapshot_blob, str):
+                networks = json.loads(snapshot_blob)
+            else:
+                networks = snapshot_blob
+            net_count = len(networks) if isinstance(networks, list) else 0
+            
+            # Scrittura riga CSV
+            writer.writerow([
+                snap_id, 
+                dt.strftime("%Y-%m-%d %H:%M:%S"), 
+                status, 
+                score, 
+                details or "", 
+                net_count
+            ])
+            
+        cur.close()
+        conn.close()
+        
+        # Creiamo la risposta come file scaricabile
+        output.seek(0)
+        return Response(
+            output,
+            mimetype="text/csv",
+            headers={"Content-Disposition": "attachment;filename=sentinel_report.csv"}
+        )
+
+    except Exception as e:
+        print(f"[WEB] Errore export: {e}")
+        return redirect(url_for('index'))
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
