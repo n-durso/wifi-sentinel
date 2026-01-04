@@ -12,6 +12,9 @@
 
     <nav class="navbar navbar-dark bg-dark mb-4 shadow-sm">
         <div class="container">
+
+            
+
             <a class="navbar-brand d-flex align-items-center gap-2" href="#">
                 📡 <strong>WiFi Sentinel</strong>
                 <span class="badge bg-primary rounded-pill" style="font-size: 0.7em;">Live Monitor</span>
@@ -27,6 +30,10 @@
                     onsubmit="return confirm('Sei sicuro? Questo cancellerà tutto lo storico.');">
                     <button type="submit" class="btn btn-outline-danger btn-sm">🗑️ Reset Demo</button>
                 </form>
+
+                <a href="{{ url_for('manage_whitelist') }}" class="btn btn-outline-primary btn-sm d-flex align-items-center">
+                    🛡️ Gestisci Whitelist
+                </a>
                 
             </div>
         </div>

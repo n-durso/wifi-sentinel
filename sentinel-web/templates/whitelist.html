@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Gestione Whitelist - WiFi Sentinel</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+
+    <nav class="navbar navbar-dark bg-dark mb-4">
+        <div class="container">
+            <span class="navbar-brand mb-0 h1">🛡️ Configurazione Whitelist</span>
+            <a href="{{ url_for('index') }}" class="btn btn-outline-light btn-sm">⬅️ Torna alla Dashboard</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="row">
+            
+            <div class="col-md-4 mb-4">
+                <div class="card shadow-sm border-0">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0">➕ Aggiungi Rete Sicura</h5>
+                    </div>
+                    <div class="card-body">
+                        <form method="POST">
+                            <input type="hidden" name="add" value="true">
+                            
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">SSID (Nome Rete)</label>
+                                <input type="text" name="ssid" class="form-control" placeholder="Es. Lab_WiFi" required>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">BSSID (MAC Address)</label>
+                                <input type="text" name="bssid" class="form-control" placeholder="AA:BB:CC:11:22:33" required style="font-family: monospace;">
+                                <div class="form-text small">Inserisci il MAC del router legittimo.</div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Canale (Opzionale)</label>
+                                <input type="number" name="channel" class="form-control" placeholder="Es. 6">
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Descrizione</label>
+                                <input type="text" name="description" class="form-control" placeholder="Es. Router Principale">
+                            </div>
+
+                            <button type="submit" class="btn btn-success w-100">Salva nella Whitelist</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-8">
+                <div class="card shadow-sm border-0">
+                    <div class="card-header bg-white">
+                        <h5 class="mb-0 text-secondary">📋 Reti Attualmente Protette</h5>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Rete (SSID)</th>
+                                    <th>MAC Atteso</th>
+                                    <th>Canale</th>
+                                    <th>Descrizione</th>
+                                    <th>Azioni</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in items %}
+                                <tr>
+                                    <td class="fw-bold text-primary">{{ item[1] }}</td>
+                                    <td style="font-family: monospace;">{{ item[2] }}</td>
+                                    <td>
+                                        {% if item[3] %}<span class="badge bg-secondary">Ch {{ item[3] }}</span>{% else %}-{% endif %}
+                                    </td>
+                                    <td class="small text-muted">{{ item[4] }}</td>
+                                    <td>
+                                        <form method="POST" onsubmit="return confirm('Vuoi davvero rimuovere questa rete dalla lista sicura?');">
+                                            <input type="hidden" name="delete" value="true">
+                                            <input type="hidden" name="item_id" value="{{ item[0] }}">
+                                            <button type="submit" class="btn btn-outline-danger btn-sm">🗑️</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="5" class="text-center text-muted py-4">
+                                        Nessuna rete in whitelist.<br>Il sistema non sta proteggendo nessuna rete specifica.
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</body>
+</html>
