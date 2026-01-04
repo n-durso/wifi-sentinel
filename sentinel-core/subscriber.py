@@ -29,24 +29,21 @@ class EventSubscriber:
 
     def on_message(self, client, userdata, msg):
         try:
+            # Decodifica JSON ricevuto dal Monitor
             event = json.loads(msg.payload.decode())
+            # Estraggo la lista delle reti (che serve all'Evaluator)
+            networks = event.get("networks", [])
+            timestamp = event.get("timestamp")
         except Exception as e:
             print("[CORE] Errore parsing JSON:", e)
             return
 
         # Analisi
-        decision = self.evaluator.evaluate_event(event)
-        
-        status = decision["status"]
-        score = decision["score"]
-        reasons = decision["reasons"]
-
-        # Preparo la lista dettagli per il DB
-        details = ", ".join(reasons) if reasons else ""
+        status, score, details = self.evaluator.analyze(networks)
 
         # Salvataggio DB
         try:
-            save_snapshot(event["timestamp"], json.dumps(event["networks"]), status, score, details)
+            save_snapshot(timestamp, json.dumps(networks), status, score, details or "")
         except Exception as e:
             print("[DB] Errore salvataggio:", e)
 
