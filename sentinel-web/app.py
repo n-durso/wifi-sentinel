@@ -204,5 +204,55 @@ def download_report():
         print(f"[WEB] Errore export: {e}")
         return redirect(url_for('index'))
 
+# --- GESTIONE WHITELIST ---
+@app.route('/whitelist', methods=['GET', 'POST'])
+def manage_whitelist():
+    conn = get_db_connection()
+    if not conn:
+        return "Errore connessione DB", 500
+
+    # Gestione richieste POST (Aggiungi/Rimuovi rete)
+    if request.method == 'POST':
+        #1. Aggiungi rete
+        if 'add' in request.form:
+            ssid = request.form.get('ssid')
+            bssid = request.form['bssid'].strip().upper()
+            channel = request.form.get('channel')
+            desc = request.form.get('description', '')
+
+            try:
+                cur = conn.cursor()
+                cur.execute(
+                    "INSERT INTO wifi_whitelist (ssid, bssid, channel, description) VALUES (%s, %s, %s, %s)",
+                    (ssid, bssid, channel, desc)
+                )
+                conn.commit()
+                cur.close()
+            except Exception as e:
+                print(f"[WEB] Errore aggiunta whitelist: {e}")
+        
+        #2. Rimuovi rete esistente
+        elif 'delete' in request.form:
+            try:
+                item_id = request.form['item_id']
+                cur = conn.cursor()
+                cur.execute("DELETE FROM wifi_whitelist WHERE id = %s", (item_id,))
+                conn.commit()
+                cur.close()
+            except Exception as e:
+                print(f"[WEB] Errore rimozione whitelist: {e}")
+        
+        return redirect(url_for('manage_whitelist'))
+
+    # Gestione richieste GET (Visualizza whitelist)
+    cur = conn.cursor()
+    cur.execute("SELECT id, ssid, bssid, channel, description FROM wifi_whitelist ORDER BY ssid ASC")
+    whitelist_items = cur.fetchall()
+    cur.close()
+    conn.close()
+
+    return render_template('whitelist.html', items=whitelist_items)
+
+
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
