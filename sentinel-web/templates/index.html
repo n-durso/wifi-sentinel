@@ -11,18 +11,17 @@
 <body class="bg-light">
 
     <nav class="navbar navbar-dark bg-dark mb-4 shadow-sm">
-        <div class="container">
+        <div class="container-fluid px-4">
+            <a class="navbar-brand mb-0 h1 fw-bold" href="#">📡 WiFi Sentinel Dashboard</a>
 
-            
+            <div class="d-flex gap-2 align-items-center">
 
-            <a class="navbar-brand d-flex align-items-center gap-2" href="#">
-                📡 <strong>WiFi Sentinel</strong>
-                <span class="badge bg-primary rounded-pill" style="font-size: 0.7em;">Live Monitor</span>
-            </a>
-
-            <div class="d-flex gap-2">
+                <span class="text-white me-3 small">
+                    Ciao, <strong>{{ current_user.username }}</strong> 
+                    {% if current_user.is_admin %} <span class="badge bg-danger ms-1">ADMIN</span> {% endif %}
+                </span>
                 
-                <a href="{{ url_for('download_report') }}" class="btn btn-outline-success btn-sm d-flex align-items-center">
+                <a href="{{ url_for('download_report') }}" class="btn btn-outline-success btn-sm">
                     📄 Export CSV
                 </a>
 
@@ -31,8 +30,14 @@
                     <button type="submit" class="btn btn-outline-danger btn-sm">🗑️ Reset Demo</button>
                 </form>
 
-                <a href="{{ url_for('manage_whitelist') }}" class="btn btn-outline-primary btn-sm d-flex align-items-center">
-                    🛡️ Gestisci Whitelist
+                {% if current_user.is_admin %}
+                    <a href="{{ url_for('manage_whitelist') }}" class="btn btn-outline-warning btn-sm">
+                        🛡️Gestisci Whitelist
+                    </a>
+                {% endif %}
+
+                <a href="{{ url_for('logout') }}" class="btn btn-outline-light btn-sm">
+                    🚪 Esci
                 </a>
                 
             </div>
