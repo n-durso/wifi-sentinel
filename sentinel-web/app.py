@@ -110,9 +110,15 @@ def register():
 
     return render_template('register.html')
 
-
+@app.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    flash("Sei stato disconnesso.", "info")
+    return redirect(url_for('login'))
 
 @app.route('/')
+@login_required
 def index():
     conn = get_db_connection()
     snapshots_list = []
@@ -175,6 +181,7 @@ def index():
 
 # --- PAGINA DI DETTAGLI ---
 @app.route('/snapshot/<int:snapshot_id>')
+@login_required
 def view_snapshot(snapshot_id):
     conn = get_db_connection()
     snapshot_data = None
@@ -223,6 +230,7 @@ def view_snapshot(snapshot_id):
 
 # --- FUNZIONE RESET ---
 @app.route('/reset', methods=['POST'])
+@login_required
 def reset_db():
     conn = get_db_connection()
     if conn:
@@ -238,6 +246,7 @@ def reset_db():
 
 # -- ESPORTA CSV ---
 @app.route('/download_report')
+@login_required
 def download_report():
     conn = get_db_connection()
     if not conn:
@@ -297,7 +306,13 @@ def download_report():
 
 # --- GESTIONE WHITELIST ---
 @app.route('/whitelist', methods=['GET', 'POST'])
+@login_required
 def manage_whitelist():
+    # Solo admin possono accedere
+    if not current_user.is_admin:
+        flash("Accesso negato: solo amministratori.", "danger")
+        return redirect(url_for('index'))
+    
     conn = get_db_connection()
     if not conn:
         return "Errore connessione DB", 500
