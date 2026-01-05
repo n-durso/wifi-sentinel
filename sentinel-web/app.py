@@ -5,7 +5,17 @@ import csv
 import io
 from flask import Flask, render_template, request, redirect, url_for, Response
 
+from flas_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
+from werkzeug.security import generate_password_hash, check_password_hash
+
+
 app = Flask(__name__)
+
+app.secret_key = os.getenv("FLASK_SECRET_KEY", "supersecretkey")
+
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = 'login' # Se uno non loggato prova ad accedere a pagine protette, viene reindirizzato qui
 
 def get_db_connection():
     try:
@@ -20,6 +30,87 @@ def get_db_connection():
     except Exception as e:
         print(f"[WEB] ❌ Errore connessione DB: {e}")
         return None
+
+# Classe Utente per Flask-Login
+class User(UserMixin):
+    def __init__(self, id, username, telegram_chat_id, is_admin):
+        self.id = id
+        self.username = username
+        self.telegram_chat_id = telegram_chat_id
+        self.is_admin = is_admin
+    
+# Loader utente per Flask-Login
+@login_manager.user_loader
+def load_user(user_id):
+    conn = get_db_connection()
+    user = None
+    if conn:
+        try:
+            cur = conn.cursor()
+            cur.execute("SELECT id, username, telegram_chat_id, is_admin FROM users WHERE id = %s", (user_id,))
+            row = cur.fetchone()
+            if row:
+                user = User(id=row[0], username=row[1], telegram_chat_id=row[2], is_admin=row[3])
+            cur.close()
+            conn.close()
+        except Exception as e:
+            print(f"[WEB] Errore caricamento utente: {e}")
+    return user
+
+# Rotte autenticazione (Login, Registrazione, Logout)
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if current_user.is_authenticated:
+        return redirect(url_for('index'))
+
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("SELECT id, username, password, telegram_chat_id, is_admin FROM users WHERE username = %s", (username,))
+        row = cur.fetchone()
+        conn.close()
+
+        # Verifica credenziali
+        if row and check_password_hash(row[2], password):
+            user = User(id=row[0], username=row[1], telegram_chat_id=row[3], is_admin=row[4])
+            login_user(user)
+            return redirect(url_for('index'))
+        else:
+            flash("Credenziali non valide", "danger")
+    return render_template('login.html')
+
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if current_user.is_authenticated:
+        return redirect(url_for('index'))
+
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        hashed_password = generate_password_hash(password)
+
+        conn = get_db_connection()
+        try:
+            cur = conn.cursor()
+            cur.execute(
+                "INSERT INTO users (username, password) VALUES (%s, %s)",
+                (username, hashed_password)
+            )
+            conn.commit()
+            
+            flash("Utente registrato con successo!", "success")
+        except Exception as e:
+            print(f"[WEB] Errore registrazione utente: {e}")
+        finally:
+            conn.close()
+
+    return render_template('register.html')
+
+
 
 @app.route('/')
 def index():
