@@ -4,6 +4,7 @@ import os
 from evaluator import Evaluator
 from db import save_snapshot
 from notifier import TelegramNotifier
+from bot_listener import BotListener
 
 broker_host = os.getenv("MQTT_HOST", "127.0.0.1")
 broker_port = int(os.getenv("MQTT_PORT", 1883))
@@ -73,7 +74,6 @@ class EventSubscriber:
 
             # Notifica Telegram solo per EVIL_TWIN
             if status == "EVIL_TWIN":
-                # Usiamo 'details' anche nel messaggio Telegram per coerenza
                 msg_text = (
                     f"🚨 *ALLARME WIFI SENTINEL* 🚨\n\n"
                     f"⚠️ *Rilevato Attacco EVIL TWIN*\n"
@@ -88,6 +88,15 @@ class EventSubscriber:
 
 
 if __name__ == "__main__":
+
+    # Avvia listener Telegeram in background
+    print("[SYSTEM] Avvio Bot Listener Telegram...")
+    bot_listener = BotListener()
+    bot_listener.daemon = True
+    bot_listener.start()
+
+    # Avvia Subscriber MQTT
+    print("[SYSTEM] Avvio Subscriber MQTT...")
     evaluator = Evaluator()
     subscriber = EventSubscriber(evaluator)
     subscriber.start()
