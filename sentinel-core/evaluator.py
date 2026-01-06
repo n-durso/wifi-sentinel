@@ -65,9 +65,8 @@ class Evaluator:
                 result = strategy.analyze(net, current_whitelist)
                 
                 if result:
-                    # Abbiamo trovato una minaccia!
                     all_details.append(result['message'])
-                    print(f"[EVALUATOR] ⚠️ {result['message']}") # Log console per debug
+                    print(f"[EVALUATOR] ⚠️ {result['message']}") 
                     
                     # Se il rischio è più alto di quello trovato finora, aggiorniamo lo status generale
                     if result['score'] > max_score:
