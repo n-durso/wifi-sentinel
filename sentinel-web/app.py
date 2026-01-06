@@ -304,6 +304,62 @@ def download_report():
         print(f"[WEB] Errore export: {e}")
         return redirect(url_for('index'))
 
+# --- AGGIUNTA RAPIDA WHITELIST ---
+@app.route('/whitelist/quick_add', methods=['POST'])
+@login_required
+def quick_add_whitelist():
+    # Solo admin possono accedere
+    if not current_user.is_admin:
+        flash("Accesso negato: solo amministratori.", "danger")
+        return redirect(request.referrer or url_for('index'))
+
+    # Recupera i dati dal form nascosto
+    ssid = request.form.get('ssid', '')
+    bssid = request.form.get('bssid', '').strip().upper()
+    channel = request.form.get('channel', '')
+
+    if not ssid or not bssid:
+        flash("SSID e BSSID sono obbligatori.", "danger")
+        return redirect(request.referrer)
+    
+    conn = get_db_connection()
+    if conn:
+        try:
+            cur = conn.cursor()
+            
+            # Controllo se la rete è già in whitelist
+            cur.execute(
+                "SELECT id, bssid FROM wifi_whitelist WHERE ssid = %s",
+                (ssid,)
+            )
+            existing = cur.fetchall()
+
+            # Se esiste, controlliamo se il MAC è uguale
+            is_duplicate = False
+            for row in existing:
+                if row[1] == bssid:
+                    is_duplicate = True
+                    break
+
+            if is_duplicate:
+                flash(f"La rete '{ssid}' con MAC {bssid} è già in whitelist.", "warning")
+            else:
+                # Inserisce la nuova rete in whitelist
+                cur.execute(
+                    "INSERT INTO wifi_whitelist (ssid, bssid, channel, description) VALUES (%s, %s, %s, %s)",
+                    (ssid, bssid, channel, "Aggiunta rapida da Snaphsot")
+                )
+                conn.commit()
+                flash(f"Rete '{ssid}' aggiunta alla whitelist.", "success")
+
+            cur.close()
+            conn.close()
+        except Exception as e:
+            print(f"[WEB] Errore aggiunta rapida whitelist: {e}")
+            flash("Errore durante l'aggiunta alla whitelist.", "danger")
+
+    return redirect(request.referrer)
+
 # --- GESTIONE WHITELIST ---
 @app.route('/whitelist', methods=['GET', 'POST'])
 @login_required
