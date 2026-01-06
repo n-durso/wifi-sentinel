@@ -17,7 +17,7 @@ class WhitelistStrategy:
         if bssid not in allowed_bssids:
             return {
                 "score": 1.0,
-                "type": "Evil Twin",
+                "type": "EVIL_TWIN",
                 "message": f"EVIL TWIN RILEVATO! La rete '{ssid}' sta trasmettendo dal MAC sconosciuto {bssid} (Atteso: {allowed_bssids})"
             }
 
