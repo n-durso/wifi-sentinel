@@ -4,6 +4,7 @@ import json
 import csv
 import io
 from flask import Flask, render_template, request, redirect, url_for, Response, flash
+import secrets
 
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -178,6 +179,37 @@ def index():
             print(f"[WEB] Errore query index: {e}")
     
     return render_template('index.html', snapshots=snapshots_list, stats=stats)
+
+# --- INTEGRAZIONE TELEGRAM ---
+@app.route('/connect_telegram')
+@login_required
+def connect_telegram():
+    #Genera un token sicuro
+    token = secrets.token_urlsafe(16)
+    
+    conn = get_db_connection()
+    if conn:
+        try:
+            cur = conn.cursor()
+            # Salva il token nel DB che serve al bot per associare l'utente
+            cur.execute(
+                "UPDATE users SET verification_token = %s WHERE id = %s",
+                (token, current_user.id)
+            )
+            conn.commit()
+            cur.close()
+            conn.close()
+            
+            # Reindirizza su Telegram
+            # Quando viene cliccato "Avvia" nel bot, riceverà "/start <token>
+            bot_name = "Sentinel_sapd_bot"
+            return redirect(f"https://t.me/{bot_name}?start={token}")
+            
+        except Exception as e:
+            print(f"[WEB] Errore Telegram Token: {e}")
+            flash("Errore durante la connessione a Telegram.", "danger")
+            
+    return redirect(url_for('index'))
 
 # --- PAGINA DI DETTAGLI ---
 @app.route('/snapshot/<int:snapshot_id>')
