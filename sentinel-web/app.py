@@ -384,14 +384,24 @@ def manage_whitelist():
 
             try:
                 cur = conn.cursor()
-                cur.execute(
-                    "INSERT INTO wifi_whitelist (ssid, bssid, channel, description) VALUES (%s, %s, %s, %s)",
-                    (ssid, bssid, channel, desc)
-                )
-                conn.commit()
+                # Controllo duplicati
+                cur.execute("SELECT id FROM wifi_whitelist WHERE ssid = %s AND bssid = %s", (ssid, bssid))
+                duplicate = cur.fetchone()
+
+                if duplicate:
+                    flash(f"Attenzione: La rete '{ssid}' con MAC {bssid} è già presente nella whitelist!", "warning")
+                else:
+                    cur.execute(
+                        "INSERT INTO wifi_whitelist (ssid, bssid, channel, description) VALUES (%s, %s, %s, %s)",
+                        (ssid, bssid, channel, desc)
+                    )
+                    conn.commit()
+                    flash(f"Rete '{ssid}' aggiunta correttamente alla whitelist.", "success")
+                
                 cur.close()
             except Exception as e:
                 print(f"[WEB] Errore aggiunta whitelist: {e}")
+                flash("Errore interno durante il salvataggio.", "danger")
         
         #2. Rimuovi rete esistente
         elif 'delete' in request.form:
@@ -401,8 +411,10 @@ def manage_whitelist():
                 cur.execute("DELETE FROM wifi_whitelist WHERE id = %s", (item_id,))
                 conn.commit()
                 cur.close()
+                flash("Rete rimossa dalla whitelist.", "info")
             except Exception as e:
                 print(f"[WEB] Errore rimozione whitelist: {e}")
+                flash("Errore durante la rimozione.", "danger")
         
         return redirect(url_for('manage_whitelist'))
 
