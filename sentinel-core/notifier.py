@@ -50,8 +50,7 @@ class TelegramNotifier:
                 url = f"https://api.telegram.org/bot{self.token}/sendMessage"
                 payload = {
                     "chat_id": chat_id,
-                    "text": message,
-                    "parse_mode": "Markdown"
+                    "text": message
                 }
                 requests.post(url, json=payload, timeout=5)
             except Exception as e:
