@@ -75,10 +75,10 @@ class EventSubscriber:
             # Notifica Telegram solo per EVIL_TWIN
             if status == "EVIL_TWIN":
                 msg_text = (
-                    f"🚨 *ALLARME WIFI SENTINEL* 🚨\n\n"
-                    f"⚠️ *Rilevato Attacco EVIL TWIN*\n"
-                    f"📉 *Score:* {score:.2f}\n\n"
-                    f"🔍 *Dettagli:*\n{details}"
+                    f"🚨 ALLARME WIFI SENTINEL 🚨\n\n"
+                    f"⚠️ Rilevato Attacco EVIL TWIN\n"
+                    f"📉 Score: {score:.2f}\n\n"
+                    f"🔍 Dettagli:\n{details}"
                 )
                 self.notifier.send_alert(msg_text)
 
