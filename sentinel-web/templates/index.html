@@ -16,9 +16,20 @@
 
             <div class="d-flex gap-2 align-items-center">
 
-                <span class="text-white me-3 small">
-                    Ciao, <strong>{{ current_user.username }}</strong> 
-                    {% if current_user.is_admin %} <span class="badge bg-danger ms-1">ADMIN</span> {% endif %}
+                <span class="text-white me-3 small d-flex align-items-center gap-2">
+                    <span>Ciao, <strong>{{ current_user.username }}</strong></span>
+                    
+                    {% if current_user.is_admin %} 
+                        <span class="badge bg-danger">ADMIN</span> 
+                    {% endif %}
+
+                    {% if current_user.telegram_chat_id %}
+                        <span class="badge bg-info text-dark" title="Telegram Connesso">✈️ OK</span>
+                    {% else %}
+                        <a href="{{ url_for('connect_telegram') }}" class="btn btn-sm btn-primary py-0" style="font-size: 0.8rem;" target="_blank">
+                            🔔 Collega Telegram
+                        </a>
+                    {% endif %}
                 </span>
                 
                 <a href="{{ url_for('download_report') }}" class="btn btn-outline-success btn-sm">
@@ -45,6 +56,19 @@
     </nav>
 
     <div class="container">
+
+        <div class="container mt-3">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+        </div>
         
         <div class="row text-center mb-4">
             <div class="col-md-4">
