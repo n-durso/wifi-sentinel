@@ -460,5 +460,79 @@ def manage_whitelist():
     return render_template('whitelist.html', items=whitelist_items)
 
 
+# --- INIZIALIZZAZIONE DEL DATABASE ---
+def init_db():
+    # Crea le tabelle e l'utente admin se non esistono.
+    print("[WEB] Verifica inizializzazione Database...")
+    conn = get_db_connection()
+    if not conn:
+        print("[WEB] Impossibile connettersi al DB per l'init.")
+        return
+
+    try:
+        cur = conn.cursor()
+
+        # CREAZIONE TABELLE (Se non esistono)
+        # Tabella Users
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS users (
+                id SERIAL PRIMARY KEY,
+                username VARCHAR(50) UNIQUE NOT NULL,
+                password VARCHAR(255) NOT NULL,
+                telegram_chat_id VARCHAR(50),
+                verification_token VARCHAR(50),
+                is_admin BOOLEAN DEFAULT FALSE
+            );
+        """)
+
+        # Tabella Snapshots
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS wifi_snapshots (
+                id SERIAL PRIMARY KEY,
+                timestamp FLOAT NOT NULL,
+                snapshot JSONB,
+                status VARCHAR(20),
+                score FLOAT,
+                details TEXT
+            );
+        """)
+
+        # Tabella Whitelist
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS wifi_whitelist (
+                id SERIAL PRIMARY KEY,
+                ssid VARCHAR(100) NOT NULL,
+                bssid VARCHAR(17) NOT NULL,
+                channel INTEGER,
+                description TEXT,
+                CONSTRAINT unique_ssid_bssid UNIQUE (ssid, bssid)
+            );
+        """)
+
+        # CREAZIONE ADMIN DI DEFAULT
+        cur.execute("SELECT id FROM users WHERE username = 'admin'")
+        if not cur.fetchone():
+            print("[WEB] Primo avvio rilevato: Creo utente 'admin'...")
+            # Genera hash della password "admin"
+            hashed_pw = generate_password_hash("admin")
+            cur.execute(
+                "INSERT INTO users (username, password, is_admin) VALUES (%s, %s, %s)",
+                ('admin', hashed_pw, True)
+            )
+            print("[WEB] Utente 'admin' creato (Password: admin).")
+        else:
+            print("[WEB] Utente admin già presente.")
+
+        conn.commit()
+        cur.close()
+        conn.close()
+
+    except Exception as e:
+        print(f"[WEB] Errore durante init_db: {e}")
+
 if __name__ == '__main__':
+
+    # Inizializzo DB prima di partire
+    init_db()
+
     app.run(debug=True, host='0.0.0.0', port=5000)
