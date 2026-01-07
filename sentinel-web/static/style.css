@@ -1,16 +1,16 @@
-/* Custom Font (opzionale, Bootstrap usa già font di sistema ottimi) */
+/* Custom Font */
 body {
     font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
 }
 
-/* Piccoli ritocchi non coperti da Bootstrap */
+/* Piccoli ritocchi non presenti in Bootstrap */
 .table th {
     font-size: 0.85rem;
     letter-spacing: 0.5px;
     text-transform: uppercase;
 }
 
-/* Animazione sulla barra di rischio per renderla fluida */
+/* Animazione sulla barra di rischio */
 .progress-bar {
     transition: width 0.6s ease;
 }

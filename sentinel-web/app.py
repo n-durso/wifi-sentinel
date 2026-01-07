@@ -29,7 +29,7 @@ def get_db_connection():
         )
         return conn
     except Exception as e:
-        print(f"[WEB] ❌ Errore connessione DB: {e}")
+        print(f"[WEB] Errore connessione DB: {e}")
         return None
 
 # Classe Utente per Flask-Login

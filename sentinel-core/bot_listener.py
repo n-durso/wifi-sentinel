@@ -47,10 +47,10 @@ class BotListener(threading.Thread):
                         (str(chat_id), user_id)
                     )
                     conn.commit()
-                    self.send_reply(chat_id, f"✅ *Perfetto {username}!* \nTelegram collegato con successo.\nRiceverai qui gli allarmi.")
+                    self.send_reply(chat_id, f" *Perfetto {username}!* \nTelegram collegato con successo.\nRiceverai qui gli allarmi.")
                     print(f"[BOT] Utente {username} collegato a ChatID {chat_id}")
                 else:
-                    self.send_reply(chat_id, "⚠️ *Errore:* Token non valido o scaduto.\nRiprova dalla Dashboard.")
+                    self.send_reply(chat_id, " *Errore:* Token non valido o scaduto.\nRiprova dalla Dashboard.")
                 
                 cur.close()
                 conn.close()

@@ -28,7 +28,7 @@ class TelegramNotifier:
             cur.close()
             conn.close()
         except Exception as e:
-            print(f"[NOTIFIER] ❌ Errore lettura destinatari: {e}")
+            print(f"[NOTIFIER] Errore lettura destinatari: {e}")
         
         return recipients
 
@@ -41,7 +41,7 @@ class TelegramNotifier:
         chat_ids = self.get_recipients()
         
         if not chat_ids:
-            print("[NOTIFIER] ⚠️ Nessun utente Telegram registrato. Nessuna notifica inviata.")
+            print("[NOTIFIER] Nessun utente Telegram registrato. Nessuna notifica inviata.")
             return
 
         # Invia a tutti
@@ -56,4 +56,4 @@ class TelegramNotifier:
             except Exception as e:
                 print(f"[NOTIFIER] Errore invio a {chat_id}: {e}")
         
-        print(f"[NOTIFIER] ✅ Allarme inviato a {len(chat_ids)} utenti.")
+        print(f"[NOTIFIER] Allarme inviato a {len(chat_ids)} utenti.")

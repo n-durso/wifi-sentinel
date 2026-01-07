@@ -39,14 +39,14 @@ class Evaluator:
 
             cur.close()
         except Exception as e:
-            print(f"[EVALUATOR] ❌ Errore lettura whitelist DB: {e}")
+            print(f"[EVALUATOR] Errore lettura whitelist DB: {e}")
         finally:
             if conn: conn.close()
         
         return whitelist_dict
 
     def analyze(self, networks):
-        """Metodo principale chiamato ogni volta che arrivano nuovi dati dallo sniffer"""
+        # Metodo principale chiamato ogni volta che arrivano nuovi dati dallo sniffer
         
         current_whitelist = self.get_whitelist_from_db()
         
@@ -66,7 +66,7 @@ class Evaluator:
                 
                 if result:
                     all_details.append(result['message'])
-                    print(f"[EVALUATOR] ⚠️ {result['message']}") 
+                    print(f"[EVALUATOR] {result['message']}") 
                     
                     # Se il rischio è più alto di quello trovato finora, aggiorniamo lo status generale
                     if result['score'] > max_score:

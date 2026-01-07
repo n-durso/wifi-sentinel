@@ -54,24 +54,9 @@ class EventSubscriber:
         if status == "SAFE":
             # Output minimale se SAFE
             count = len(event.get("networks", []))
-            print(f"[CORE] ✅ SAFE - Analizzate {count} reti (Score: {score:.1f})")
+            print(f"[CORE] SAFE - Analizzate {count} reti (Score: {score:.1f})")
         
         else:
-            # Output più corposo se SUSPICIOUS o EVIL_TWIN
-            color = "⚠️" if status == "SUSPICIOUS" else "🚨"
-            border = "!" * 60
-            
-            print("\n" + border)
-            print(f"{color}  {status} DETECTED (Score: {score:.2f})  {color}")
-            print("-" * 60)
-            
-            if details:
-                print(f" -> {details}")
-            else:
-                print(" -> Nessun dettaglio specifico.")
-            
-            print(border + "\n")
-
             # Notifica Telegram solo per EVIL_TWIN
             if status == "EVIL_TWIN":
                 msg_text = (
