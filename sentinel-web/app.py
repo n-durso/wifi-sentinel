@@ -466,77 +466,83 @@ def init_db():
 
     # Crea le tabelle e l'utente admin se non esistono.
 
-    max_retries = 10  # Riprova per 10 volte
+    max_retries = 15  # Riprova per 15 volte
     wait_seconds = 2  # Aspetta 2 secondi tra i tentativi
 
     print("[WEB] Verifica inizializzazione Database...")
 
     for attempt in range(1, max_retries + 1):
-
+        
+        conn = get_db_connection()
+        
+        # Connessione fallita, riprova
+        if not conn:
+            print(f"[WEB] Tentativo {attempt}/{max_retries} fallito. Il DB non è ancora pronto...")
+            time.sleep(wait_seconds)
+            continue
+        
+        # Connessione riuscita, procedi con l'inizializzazione
         try:
-            conn = get_db_connection()
-            if conn:
-                print(f"[WEB] Connessione al DB riuscita al tentativo {attempt}!")
-                
-                cur = conn.cursor()
+            print(f"[WEB] Connessione al DB riuscita al tentativo {attempt}!")
+            cur = conn.cursor()
 
-                # CREAZIONE TABELLE
-                cur.execute("""
-                    CREATE TABLE IF NOT EXISTS users (
-                        id SERIAL PRIMARY KEY,
-                        username VARCHAR(50) UNIQUE NOT NULL,
-                        password VARCHAR(255) NOT NULL,
-                        telegram_chat_id VARCHAR(50),
-                        verification_token VARCHAR(50),
-                        is_admin BOOLEAN DEFAULT FALSE
-                    );
-                """)
+            # CREAZIONE TABELLE
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS users (
+                    id SERIAL PRIMARY KEY,
+                    username VARCHAR(50) UNIQUE NOT NULL,
+                    password VARCHAR(255) NOT NULL,
+                    telegram_chat_id VARCHAR(50),
+                    verification_token VARCHAR(50),
+                    is_admin BOOLEAN DEFAULT FALSE
+                );
+            """)
 
-                cur.execute("""
-                    CREATE TABLE IF NOT EXISTS wifi_snapshots (
-                        id SERIAL PRIMARY KEY,
-                        timestamp FLOAT NOT NULL,
-                        snapshot JSONB,
-                        status VARCHAR(20),
-                        score FLOAT,
-                        details TEXT
-                    );
-                """)
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS wifi_snapshots (
+                    id SERIAL PRIMARY KEY,
+                    timestamp FLOAT NOT NULL,
+                    snapshot JSONB,
+                    status VARCHAR(20),
+                    score FLOAT,
+                    details TEXT
+                );
+            """)
 
-                cur.execute("""
-                    CREATE TABLE IF NOT EXISTS wifi_whitelist (
-                        id SERIAL PRIMARY KEY,
-                        ssid VARCHAR(100) NOT NULL,
-                        bssid VARCHAR(17) NOT NULL,
-                        channel INTEGER,
-                        description TEXT,
-                        CONSTRAINT unique_ssid_bssid UNIQUE (ssid, bssid)
-                    );
-                """)
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS wifi_whitelist (
+                    id SERIAL PRIMARY KEY,
+                    ssid VARCHAR(100) NOT NULL,
+                    bssid VARCHAR(17) NOT NULL,
+                    channel INTEGER,
+                    description TEXT,
+                    CONSTRAINT unique_ssid_bssid UNIQUE (ssid, bssid)
+                );
+            """)
 
-                # CREAZIONE ADMIN DEFAULT
-                cur.execute("SELECT id FROM users WHERE username = 'admin'")
-                if not cur.fetchone():
-                    print("[WEB] Primo avvio: Creazione utente 'admin'...")
-                    hashed_pw = generate_password_hash("admin")
-                    cur.execute(
-                        "INSERT INTO users (username, password, is_admin) VALUES (%s, %s, %s)",
-                        ('admin', hashed_pw, True)
-                    )
-                    print("[WEB] Utente 'admin' creato.")
-                else:
-                    print("[WEB] Utente admin già presente.")
+            # CREAZIONE ADMIN DEFAULT
+            cur.execute("SELECT id FROM users WHERE username = 'admin'")
+            if not cur.fetchone():
+                print("[WEB] Primo avvio: Creazione utente 'admin'...")
+                hashed_pw = generate_password_hash("admin")
+                cur.execute(
+                    "INSERT INTO users (username, password, is_admin) VALUES (%s, %s, %s)",
+                    ('admin', hashed_pw, True)
+                )
+                print("[WEB] Utente 'admin' creato.")
+            else:
+                print("[WEB] Utente admin già presente.")
 
-                conn.commit()
-                cur.close()
-                conn.close()
-                return # Inizializzazione completata con successo
+            conn.commit()
+            cur.close()
+            conn.close()
+            return 
 
-            except Exception as e:
-                print(f"[WEB] ⏳ Tentativo {attempt}/{max_retries} fallito. Il DB non è ancora pronto...")
-                time.sleep(wait_seconds)
+        except Exception as e:
+            print(f"[WEB] Errore SQL durante init_db: {e}")
+            time.sleep(wait_seconds)
 
-        print("[WEB] ERRORE FATALE: Impossibile connettersi al DB dopo vari tentativi.")
+    print("[WEB] ERRORE FATALE: Impossibile inizializzare il DB dopo vari tentativi.")
 
 if __name__ == '__main__':
 
