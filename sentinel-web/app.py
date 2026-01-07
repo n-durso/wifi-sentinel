@@ -5,6 +5,7 @@ import csv
 import io
 from flask import Flask, render_template, request, redirect, url_for, Response, flash
 import secrets
+import time
 
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -460,75 +461,82 @@ def manage_whitelist():
     return render_template('whitelist.html', items=whitelist_items)
 
 
-# --- INIZIALIZZAZIONE DEL DATABASE ---
+# --- INIZIALIZZAZIONE DEL DATABASE CON RETRY ---
 def init_db():
+
     # Crea le tabelle e l'utente admin se non esistono.
+
+    max_retries = 10  # Riprova per 10 volte
+    wait_seconds = 2  # Aspetta 2 secondi tra i tentativi
+
     print("[WEB] Verifica inizializzazione Database...")
-    conn = get_db_connection()
-    if not conn:
-        print("[WEB] Impossibile connettersi al DB per l'init.")
-        return
 
-    try:
-        cur = conn.cursor()
+    for attempt in range(1, max_retries + 1):
 
-        # CREAZIONE TABELLE (Se non esistono)
-        # Tabella Users
-        cur.execute("""
-            CREATE TABLE IF NOT EXISTS users (
-                id SERIAL PRIMARY KEY,
-                username VARCHAR(50) UNIQUE NOT NULL,
-                password VARCHAR(255) NOT NULL,
-                telegram_chat_id VARCHAR(50),
-                verification_token VARCHAR(50),
-                is_admin BOOLEAN DEFAULT FALSE
-            );
-        """)
+        try:
+            conn = get_db_connection()
+            if conn:
+                print(f"[WEB] Connessione al DB riuscita al tentativo {attempt}!")
+                
+                cur = conn.cursor()
 
-        # Tabella Snapshots
-        cur.execute("""
-            CREATE TABLE IF NOT EXISTS wifi_snapshots (
-                id SERIAL PRIMARY KEY,
-                timestamp FLOAT NOT NULL,
-                snapshot JSONB,
-                status VARCHAR(20),
-                score FLOAT,
-                details TEXT
-            );
-        """)
+                # CREAZIONE TABELLE
+                cur.execute("""
+                    CREATE TABLE IF NOT EXISTS users (
+                        id SERIAL PRIMARY KEY,
+                        username VARCHAR(50) UNIQUE NOT NULL,
+                        password VARCHAR(255) NOT NULL,
+                        telegram_chat_id VARCHAR(50),
+                        verification_token VARCHAR(50),
+                        is_admin BOOLEAN DEFAULT FALSE
+                    );
+                """)
 
-        # Tabella Whitelist
-        cur.execute("""
-            CREATE TABLE IF NOT EXISTS wifi_whitelist (
-                id SERIAL PRIMARY KEY,
-                ssid VARCHAR(100) NOT NULL,
-                bssid VARCHAR(17) NOT NULL,
-                channel INTEGER,
-                description TEXT,
-                CONSTRAINT unique_ssid_bssid UNIQUE (ssid, bssid)
-            );
-        """)
+                cur.execute("""
+                    CREATE TABLE IF NOT EXISTS wifi_snapshots (
+                        id SERIAL PRIMARY KEY,
+                        timestamp FLOAT NOT NULL,
+                        snapshot JSONB,
+                        status VARCHAR(20),
+                        score FLOAT,
+                        details TEXT
+                    );
+                """)
 
-        # CREAZIONE ADMIN DI DEFAULT
-        cur.execute("SELECT id FROM users WHERE username = 'admin'")
-        if not cur.fetchone():
-            print("[WEB] Primo avvio rilevato: Creo utente 'admin'...")
-            # Genera hash della password "admin"
-            hashed_pw = generate_password_hash("admin")
-            cur.execute(
-                "INSERT INTO users (username, password, is_admin) VALUES (%s, %s, %s)",
-                ('admin', hashed_pw, True)
-            )
-            print("[WEB] Utente 'admin' creato (Password: admin).")
-        else:
-            print("[WEB] Utente admin già presente.")
+                cur.execute("""
+                    CREATE TABLE IF NOT EXISTS wifi_whitelist (
+                        id SERIAL PRIMARY KEY,
+                        ssid VARCHAR(100) NOT NULL,
+                        bssid VARCHAR(17) NOT NULL,
+                        channel INTEGER,
+                        description TEXT,
+                        CONSTRAINT unique_ssid_bssid UNIQUE (ssid, bssid)
+                    );
+                """)
 
-        conn.commit()
-        cur.close()
-        conn.close()
+                # CREAZIONE ADMIN DEFAULT
+                cur.execute("SELECT id FROM users WHERE username = 'admin'")
+                if not cur.fetchone():
+                    print("[WEB] Primo avvio: Creazione utente 'admin'...")
+                    hashed_pw = generate_password_hash("admin")
+                    cur.execute(
+                        "INSERT INTO users (username, password, is_admin) VALUES (%s, %s, %s)",
+                        ('admin', hashed_pw, True)
+                    )
+                    print("[WEB] Utente 'admin' creato.")
+                else:
+                    print("[WEB] Utente admin già presente.")
 
-    except Exception as e:
-        print(f"[WEB] Errore durante init_db: {e}")
+                conn.commit()
+                cur.close()
+                conn.close()
+                return # Inizializzazione completata con successo
+
+            except Exception as e:
+                print(f"[WEB] ⏳ Tentativo {attempt}/{max_retries} fallito. Il DB non è ancora pronto...")
+                time.sleep(wait_seconds)
+
+        print("[WEB] ERRORE FATALE: Impossibile connettersi al DB dopo vari tentativi.")
 
 if __name__ == '__main__':
 
