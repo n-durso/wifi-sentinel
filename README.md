@@ -39,7 +39,7 @@ Il sistema è composto da 5 microservizi containerizzati:
 ### Metodo 1: Avvio dall'archivio ZIP
 L'archivio consegnato contiene già tutti i file di configurazione necessari, incluso il token del bot Telegram.
 
-1.  Estrarre l'archivio `Gruppo_XX.zip`.
+1.  Estrarre l'archivio `WiFi-Sentinel.zip`.
 2.  Entrare nella cartella del codice sorgente.
 3.  Avviare il sistema:
     ```bash
